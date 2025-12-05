@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 Copernicus Climate Dashboard</title>
+    
+    <!-- Google Fonts - Schöne Schriftart -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js für interaktive Grafiken -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* ============================================
+           CSS VARIABLEN - Farben und Grundwerte
+           ============================================ */
+        :root {
+            --primary: #0ea5e9;        /* Himmelbblau */
+            --primary-dark: #0284c7;
+            --secondary: #10b981;       /* Smaragdgrün */
+            --accent: #f59e0b;          /* Warmgelb */
+            --danger: #ef4444;          /* Rot für Warnungen */
+            
+            --bg-dark: #0f172a;         /* Dunkler Hintergrund */
+            --bg-card: #1e293b;         /* Karten-Hintergrund */
+            --bg-card-hover: #334155;
+            
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --radius: 16px;
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ============================================
+           GRUNDLEGENDE STYLES
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Animierter Hintergrund mit Gradient */
+        .background-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(14, 165, 233, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(245, 158, 11, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* ============================================
+           HEADER
+           ============================================ */
+        header {
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* ============================================
+           HAUPT-CONTAINER
+           ============================================ */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============================================
+           KARTEN
+           ============================================ */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* ============================================
+           VERÖFFENTLICHUNGEN LISTE
+           ============================================ */
+        .news-section {
+            grid-column: 1 / -1;
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .news-item {
+            background: var(--bg-card-hover);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .news-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .news-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .news-item:hover::before {
+            opacity: 1;
+        }
+
+        .news-kategorie {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .news-titel {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+        }
+
+        .news-datum {
+            color: var(--accent);
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .news-beschreibung {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           SUCHAGENT / CHAT
+           ============================================ */
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-user {
+            text-align: right;
+        }
+
+        .message-user .message-content {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: inline-block;
+            padding: 0.75rem 1rem;
+            border-radius: 18px 18px 4px 18px;
+            max-width: 80%;
+        }
+
+        .message-bot .message-content {
+            background: var(--bg-card-hover);
+            padding: 1rem;
+            border-radius: 4px 18px 18px 18px;
+            border-left: 3px solid var(--secondary);
+        }
+
+        .message-content strong {
+            color: var(--accent);
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: var(--bg-card-hover);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-light);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            color: white;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(14, 165, 233, 0.4);
+        }
+
+        .send-button:active {
+            transform: scale(0.95);
+        }
+
+        /* ============================================
+           STATISTIK KARTEN
+           ============================================ */
+        .stats-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card-hover);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateX(10px);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-info h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .stat-info p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* ============================================
+           QUICK LINKS
+           ============================================ */
+        .quick-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .quick-link {
+            background: var(--bg-card-hover);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 0.5rem 1rem;
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .quick-link:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* ============================================
+           LOADING ANIMATION
+           ============================================ */
+        .loading {
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--bg-card-hover);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 2rem;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ============================================
+           SCROLLBAR STYLING
+           ============================================ */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        /* ============================================
+           INTERAKTIVE GRAFIKEN
+           ============================================ */
+        .charts-section {
+            grid-column: 1 / -1;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-container {
+            background: var(--bg-card-hover);
+            border-radius: 12px;
+            padding: 1.25rem;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .chart-container:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+        }
+
+        .chart-container.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .chart-canvas {
+            width: 100% !important;
+            height: 250px !important;
+        }
+
+        .chart-hint {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Grafik-Fragen Bereich */
+        .chart-question-section {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .chart-question-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .chart-question-header h3 {
+            font-size: 1rem;
+            color: var(--accent);
+        }
+
+        .selected-chart-info {
+            background: var(--bg-card-hover);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .selected-chart-info strong {
+            color: var(--accent);
+        }
+
+        .chart-chat-messages {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .chart-quick-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .chart-quick-btn {
+            background: var(--bg-card-hover);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chart-quick-btn:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+
+        .chart-input-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chart-input {
+            flex: 1;
+            background: var(--bg-card-hover);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-light);
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .chart-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .chart-send-btn {
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--bg-dark);
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .chart-send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Tooltip für Datenpunkte */
+        .data-tooltip {
+            position: fixed;
+            background: var(--bg-card);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.85rem;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+            pointer-events: none;
+            display: none;
+        }
+
+        /* ============================================
+           ERKENNTNISSE MODAL
+           ============================================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .modal-header-content {
+            flex: 1;
+        }
+
+        .modal-kategorie {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-datum {
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        .modal-close {
+            background: var(--bg-card-hover);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: var(--text-light);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+
+        .erkenntnisse-liste {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .erkenntnisse-liste li {
+            background: var(--bg-card-hover);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid var(--secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .erkenntnisse-liste li:hover {
+            transform: translateX(5px);
+            border-left-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.2);
+        }
+
+        .erkenntnisse-liste li::after {
+            content: '🇦🇹 Klick für Österreich-Recherche';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: var(--accent);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .erkenntnisse-liste li:hover::after {
+            opacity: 1;
+        }
+
+        /* Österreich-Recherche Bereich */
+        .oesterreich-recherche {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--accent);
+            display: none;
+        }
+
+        .oesterreich-recherche.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .oesterreich-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .oesterreich-content {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            padding: 1.25rem;
+            line-height: 1.8;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            min-height: 100px;
+        }
+
+        .oesterreich-content p {
+            margin: 0.5rem 0;
+        }
+
+        .oesterreich-content strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .oesterreich-content strong[style*="color: var(--accent)"] {
+            display: block;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.1em;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .oesterreich-content strong[style*="color: var(--accent)"]:first-child {
+            margin-top: 0;
+        }
+
+        .modal-loading {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .modal-loading .loading-spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 1rem;
+        }
+
+        .modal-loading p {
+            color: var(--text-muted);
+        }
+
+        .modal-footer {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .modal-source {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .modal-source strong {
+            color: var(--text-light);
+        }
+
+        .modal-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(14, 165, 233, 0.4);
+        }
+
+        .modal-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            border-radius: 10px;
+            padding: 1rem;
+            color: var(--danger);
+            margin-bottom: 1rem;
+        }
+
+        .modal-hint {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            padding: 1rem;
+            font-size: 0.85rem;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <!-- Animierter Hintergrund -->
+    <div class="background-glow"></div>
+
+    <!-- ERKENNTNISSE MODAL -->
+    <div class="modal-overlay" id="erkenntnisse-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <span class="modal-kategorie" id="modal-kategorie">Kategorie</span>
+                    <h2 class="modal-title" id="modal-title">Titel der Veröffentlichung</h2>
+                    <p class="modal-datum" id="modal-datum">📅 Datum</p>
+                </div>
+                <button class="modal-close" onclick="schliesseModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="modal-loading" id="modal-loading">
+                    <div class="loading-spinner"></div>
+                    <p>🤖 KI analysiert die Veröffentlichung...</p>
+                    <p style="font-size: 0.8rem; margin-top: 0.5rem;">GPT-5.1 generiert Recherche-Ansätze</p>
+                </div>
+                
+                <div id="modal-content" style="display: none;">
+                    <h3 class="modal-section-title">
+                        <span>💡</span>
+                        Recherche-Ansätze für Journalist:innen
+                    </h3>
+                    <ul class="erkenntnisse-liste" id="erkenntnisse-liste">
+                        <!-- Wird dynamisch gefüllt -->
+                    </ul>
+                    
+                    <!-- Österreich-spezifische Recherche -->
+                    <div class="oesterreich-recherche" id="oesterreich-recherche">
+                        <div class="oesterreich-header">
+                            <span>🇦🇹</span>
+                            <h4>Österreich-spezifische Recherche</h4>
+                        </div>
+                        <div class="modal-loading" id="oesterreich-loading" style="display: none;">
+                            <div class="loading-spinner"></div>
+                            <p>🤖 Recherchiere konkrete Fälle in Österreich...</p>
+                        </div>
+                        <div class="oesterreich-content" id="oesterreich-content">
+                            <!-- Wird dynamisch gefüllt -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-error" id="modal-error" style="display: none;">
+                    <strong>⚠️ Fehler</strong>
+                    <p id="modal-error-text"></p>
+                </div>
+                
+                <div class="modal-hint" id="modal-hint" style="display: none;">
+                    <strong>💡 Hinweis:</strong>
+                    <p id="modal-hint-text"></p>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="modal-source">
+                    <strong>Generiert von:</strong> GPT-5.1 (OpenAI)
+                </div>
+                <a href="#" class="modal-btn" id="modal-link" target="_blank">
+                    🔗 Zur Original-Quelle
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">🌍</div>
+        <h1>Copernicus Climate Dashboard</h1>
+        <p class="subtitle">Aktuelle Klimadaten und Veröffentlichungen des Copernicus Climate Data Store</p>
+    </header>
+
+    <!-- Hauptinhalt -->
+    <main class="container">
+        
+        <!-- Neueste Veröffentlichungen -->
+        <section class="card news-section">
+            <div class="card-header">
+                <span class="card-icon">📰</span>
+                <h2 class="card-title">Neueste Veröffentlichungen</h2>
+            </div>
+            <div id="news-container" class="news-grid">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INTERAKTIVE GRAFIKEN SEKTION -->
+        <section class="card charts-section">
+            <div class="card-header">
+                <span class="card-icon">📈</span>
+                <h2 class="card-title">Interaktive Klimadaten-Grafiken</h2>
+            </div>
+            
+            <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                👆 Klicke auf eine Grafik, um Fragen zu den Daten zu stellen!
+            </p>
+            
+            <!-- Die zwei Grafiken -->
+            <div class="charts-grid">
+                <!-- Grafik 1: Globale Temperatur -->
+                <div class="chart-container" id="temp-chart-container" onclick="selectChart('temperatur')">
+                    <span class="chart-hint">Klick mich!</span>
+                    <h3 class="chart-title">🌡️ Globale Temperaturanomalie</h3>
+                    <p class="chart-subtitle">Abweichung vom Durchschnitt 1850-1900 (in °C)</p>
+                    <canvas id="tempChart" class="chart-canvas"></canvas>
+                </div>
+                
+                <!-- Grafik 2: CO2-Konzentration -->
+                <div class="chart-container" id="co2-chart-container" onclick="selectChart('co2')">
+                    <span class="chart-hint">Klick mich!</span>
+                    <h3 class="chart-title">💨 CO₂-Konzentration</h3>
+                    <p class="chart-subtitle">Atmosphärischer CO₂-Gehalt (in ppm)</p>
+                    <canvas id="co2Chart" class="chart-canvas"></canvas>
+                </div>
+            </div>
+            
+            <!-- Fragen zu Grafiken -->
+            <div class="chart-question-section" id="chart-question-section">
+                <div class="chart-question-header">
+                    <span style="font-size: 1.5rem;">💬</span>
+                    <h3>Fragen zu den Daten</h3>
+                </div>
+                
+                <div class="selected-chart-info" id="selected-chart-info">
+                    <strong>Wähle eine Grafik aus</strong>, um Fragen zu stellen.
+                </div>
+                
+                <div class="chart-chat-messages" id="chart-chat-messages">
+                    <div class="message message-bot">
+                        <div class="message-content">
+                            👋 Klicke auf eine der Grafiken oben und stelle mir dann Fragen zu den Daten!
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-quick-questions" id="chart-quick-questions">
+                    <!-- Wird dynamisch gefüllt -->
+                </div>
+                
+                <div class="chart-input-row">
+                    <input 
+                        type="text" 
+                        id="chart-question-input" 
+                        class="chart-input" 
+                        placeholder="Stelle eine Frage zu den Daten..."
+                        autocomplete="off"
+                    >
+                    <button class="chart-send-btn" onclick="sendeGrafikFrage()">Fragen</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Suchagent -->
+        <section class="card chat-section">
+            <div class="card-header">
+                <span class="card-icon">🤖</span>
+                <h2 class="card-title">Klima-Suchagent</h2>
+            </div>
+            
+            <div id="chat-messages" class="chat-messages">
+                <div class="message message-bot">
+                    <div class="message-content">
+                        👋 <strong>Hallo!</strong> Ich bin dein Klima-Suchagent. 
+                        Stelle mir Fragen zu Klimadaten von Copernicus!
+                        <br><br>
+                        Zum Beispiel: "Was weißt du über die globale Temperatur?" 
+                        oder "Erzähl mir etwas über das Meereis"
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <input 
+                    type="text" 
+                    id="chat-input" 
+                    class="chat-input" 
+                    placeholder="Stelle eine Frage zum Klima..."
+                    autocomplete="off"
+                >
+                <button id="send-button" class="send-button">➤</button>
+            </div>
+        </section>
+
+        <!-- Statistiken -->
+        <section class="card stats-section">
+            <div class="card-header">
+                <span class="card-icon">📊</span>
+                <h2 class="card-title">Klima-Fakten</h2>
+            </div>
+            
+            <div class="stat-card">
+                <span class="stat-icon">🌡️</span>
+                <div class="stat-info">
+                    <h3>+1.2°C</h3>
+                    <p>Globale Erwärmung seit 1850</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <span class="stat-icon">💨</span>
+                <div class="stat-info">
+                    <h3>420+ ppm</h3>
+                    <p>CO₂-Konzentration in der Atmosphäre</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <span class="stat-icon">🌊</span>
+                <div class="stat-info">
+                    <h3>+3.7 mm/Jahr</h3>
+                    <p>Meeresspiegel-Anstieg</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <span class="stat-icon">🧊</span>
+                <div class="stat-info">
+                    <h3>-13%</h3>
+                    <p>Arktisches Meereis pro Jahrzehnt</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Links für Fragen -->
+        <section class="card">
+            <div class="card-header">
+                <span class="card-icon">💡</span>
+                <h2 class="card-title">Schnellfragen</h2>
+            </div>
+            <div class="quick-links">
+                <span class="quick-link" onclick="stelleFrage('Was ist Copernicus?')">Was ist Copernicus?</span>
+                <span class="quick-link" onclick="stelleFrage('Globale Temperatur')">Globale Temperatur</span>
+                <span class="quick-link" onclick="stelleFrage('Arktisches Meereis')">Arktisches Meereis</span>
+                <span class="quick-link" onclick="stelleFrage('CO2 Konzentration')">CO₂ Konzentration</span>
+                <span class="quick-link" onclick="stelleFrage('Ozean Erwärmung')">Ozean-Erwärmung</span>
+                <span class="quick-link" onclick="stelleFrage('Extremwetter')">Extremwetter</span>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>Daten bereitgestellt von <a href="https://climate.copernicus.eu" target="_blank">Copernicus Climate Change Service</a></p>
+        <p>© 2024 Climate Dashboard - Erstellt mit 💚 für unseren Planeten</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // ============================================
+        // ERKENNTNISSE MODAL
+        // ============================================
+        
+        // Öffne Modal und lade Erkenntnisse
+        async function oeffneErkenntnisseModal(artikel) {
+            const modal = document.getElementById('erkenntnisse-modal');
+            const loading = document.getElementById('modal-loading');
+            const content = document.getElementById('modal-content');
+            const errorDiv = document.getElementById('modal-error');
+            const hintDiv = document.getElementById('modal-hint');
+            const liste = document.getElementById('erkenntnisse-liste');
+            
+            // Modal-Header füllen
+            document.getElementById('modal-kategorie').textContent = artikel.kategorie;
+            document.getElementById('modal-title').textContent = artikel.titel;
+            document.getElementById('modal-datum').textContent = '📅 ' + artikel.datum;
+            document.getElementById('modal-link').href = artikel.link;
+            
+            // Reset und Modal anzeigen
+            loading.style.display = 'block';
+            content.style.display = 'none';
+            errorDiv.style.display = 'none';
+            hintDiv.style.display = 'none';
+            document.getElementById('oesterreich-recherche').classList.remove('active');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            try {
+                // API aufrufen
+                const response = await fetch('/api/erkenntnisse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        titel: artikel.titel,
+                        beschreibung: artikel.beschreibung,
+                        link: artikel.link,
+                        kategorie: artikel.kategorie
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Loading ausblenden
+                loading.style.display = 'none';
+                
+                // Fehler anzeigen
+                if (data.error && !data.erkenntnisse) {
+                    errorDiv.style.display = 'block';
+                    document.getElementById('modal-error-text').textContent = data.error;
+                    return;
+                }
+                
+                // Hinweis anzeigen (z.B. API-Key fehlt)
+                if (data.hinweis) {
+                    hintDiv.style.display = 'block';
+                    document.getElementById('modal-hint-text').textContent = data.hinweis;
+                }
+                
+                // Erkenntnisse anzeigen (klickbar für Österreich-Recherche)
+                if (data.erkenntnisse && data.erkenntnisse.length > 0) {
+                    liste.innerHTML = data.erkenntnisse.map((e, index) => 
+                        `<li onclick="ladeOesterreichRecherche('${e.replace(/'/g, "\\'")}', '${artikel.titel.replace(/'/g, "\\'")}')">${e}</li>`
+                    ).join('');
+                    content.style.display = 'block';
+                    
+                    // Speichere Artikel-Titel für später
+                    window.currentArtikelTitel = artikel.titel;
+                }
+                
+            } catch (error) {
+                loading.style.display = 'none';
+                errorDiv.style.display = 'block';
+                document.getElementById('modal-error-text').textContent = 
+                    'Verbindung zum Server fehlgeschlagen. Ist die App gestartet?';
+            }
+        }
+        
+        // Modal schließen
+        function schliesseModal() {
+            const modal = document.getElementById('erkenntnisse-modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Klick außerhalb des Modals schließt es
+        document.getElementById('erkenntnisse-modal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                schliesseModal();
+            }
+        });
+        
+        // Escape-Taste schließt Modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                schliesseModal();
+            }
+        });
+
+        // ============================================
+        // ÖSTERREICH-SPEZIFISCHE RECHERCHE
+        // ============================================
+        
+        async function ladeOesterreichRecherche(vorschlag, titel) {
+            const oesterreichDiv = document.getElementById('oesterreich-recherche');
+            const oesterreichContent = document.getElementById('oesterreich-content');
+            const oesterreichLoading = document.getElementById('oesterreich-loading');
+            
+            // Zeige Bereich an
+            oesterreichDiv.classList.add('active');
+            oesterreichLoading.style.display = 'block';
+            oesterreichContent.style.display = 'none';
+            
+            // Scroll zum Bereich
+            oesterreichDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            try {
+                const response = await fetch('/api/oesterreich-recherche', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vorschlag: vorschlag,
+                        titel: titel
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Loading ausblenden
+                oesterreichLoading.style.display = 'none';
+                
+                if (data.error) {
+                    oesterreichContent.innerHTML = `<p style="color: var(--danger);">⚠️ ${data.error}</p>`;
+                } else if (data.recherche) {
+                    // Formatierte Ausgabe - besser strukturiert
+                    let formatiert = data.recherche
+                        // Fette Überschriften (z.B. **1. Wien - ...**)
+                        .replace(/\*\*(\d+\.\s+[^*]+)\*\*/g, '<strong style="color: var(--accent); font-size: 1.1em; display: block; margin-top: 1.5rem; margin-bottom: 0.5rem;">$1</strong>')
+                        // Fette Textstellen
+                        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                        // Nummerierte Listen am Zeilenanfang
+                        .replace(/^(\d+\.\s+)/gm, '<strong>$1</strong>')
+                        // Aufzählungszeichen
+                        .replace(/^[-•]\s+/gm, '• ')
+                        // Doppelte Zeilenumbrüche zu Absätzen
+                        .replace(/\n\n+/g, '</p><p style="margin-top: 1rem;">')
+                        // Einzelne Zeilenumbrüche
+                        .replace(/\n/g, '<br>');
+                    
+                    oesterreichContent.innerHTML = `<div style="line-height: 1.8;">${formatiert}</div>`;
+                } else {
+                    oesterreichContent.innerHTML = `<p style="color: var(--danger);">⚠️ Keine Daten erhalten</p>`;
+                }
+                
+                oesterreichContent.style.display = 'block';
+                
+            } catch (error) {
+                oesterreichLoading.style.display = 'none';
+                oesterreichContent.innerHTML = `<p style="color: var(--danger);">❌ Fehler: ${error.message}</p>`;
+                oesterreichContent.style.display = 'block';
+            }
+        }
+
+        // ============================================
+        // VERÖFFENTLICHUNGEN LADEN
+        // ============================================
+        
+        async function ladeVeroeffentlichungen() {
+            const container = document.getElementById('news-container');
+            
+            try {
+                const response = await fetch('/api/veroeffentlichungen');
+                const artikel = await response.json();
+                
+                // Speichere Artikel-Daten für Modal
+                window.artikelDaten = artikel;
+                
+                container.innerHTML = artikel.map((item, index) => `
+                    <article class="news-item" onclick="oeffneErkenntnisseModal(window.artikelDaten[${index}])">
+                        <span class="news-kategorie">${item.kategorie}</span>
+                        <h3 class="news-titel">${item.titel}</h3>
+                        <p class="news-datum">📅 ${item.datum}</p>
+                        <p class="news-beschreibung">${item.beschreibung}</p>
+                    </article>
+                `).join('');
+                
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="message-bot">
+                        <div class="message-content">
+                            ⚠️ Veröffentlichungen konnten nicht geladen werden. 
+                            Bitte stelle sicher, dass der Server läuft.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================
+        // CHAT / SUCHAGENT
+        // ============================================
+        
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Nachricht hinzufügen
+        function addMessage(text, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'message-user' : 'message-bot'}`;
+            
+            // Markdown-ähnliche Formatierung für Bot-Nachrichten
+            let formattedText = text;
+            if (!isUser) {
+                formattedText = text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n/g, '<br>');
+            }
+            
+            messageDiv.innerHTML = `<div class="message-content">${formattedText}</div>`;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Frage senden
+        async function sendeFrage() {
+            const frage = chatInput.value.trim();
+            if (!frage) return;
+            
+            // User-Nachricht anzeigen
+            addMessage(frage, true);
+            chatInput.value = '';
+            
+            // Loading-Animation
+            addMessage('⏳ Denke nach...');
+            
+            try {
+                const response = await fetch('/api/frage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ frage: frage })
+                });
+                
+                const data = await response.json();
+                
+                // Loading-Nachricht entfernen
+                chatMessages.removeChild(chatMessages.lastChild);
+                
+                // Antwort anzeigen
+                addMessage(data.antwort);
+                
+            } catch (error) {
+                chatMessages.removeChild(chatMessages.lastChild);
+                addMessage('❌ Fehler: Konnte keine Antwort erhalten. Ist der Server aktiv?');
+            }
+        }
+
+        // Schnellfrage stellen
+        function stelleFrage(frage) {
+            chatInput.value = frage;
+            sendeFrage();
+        }
+
+        // Event Listener
+        sendButton.addEventListener('click', sendeFrage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendeFrage();
+        });
+
+        // ============================================
+        // INTERAKTIVE GRAFIKEN
+        // ============================================
+        
+        // Klimadaten für die Grafiken (basierend auf Copernicus-Daten)
+        const klimaDaten = {
+            temperatur: {
+                name: "Globale Temperaturanomalie",
+                einheit: "°C",
+                labels: ['1900', '1920', '1940', '1960', '1980', '2000', '2010', '2020', '2023', '2024'],
+                werte: [-0.2, -0.1, 0.0, 0.05, 0.25, 0.45, 0.65, 0.98, 1.18, 1.29],
+                farbe: 'rgba(239, 68, 68, 0.8)',
+                farbeFill: 'rgba(239, 68, 68, 0.2)',
+                hintergrund: {
+                    "1900": "Beginn des industriellen Zeitalters. Die Verbrennung von Kohle nahm stark zu.",
+                    "1920": "Nach dem Ersten Weltkrieg: Industrialisierung beschleunigte sich weltweit.",
+                    "1940": "Zweiter Weltkrieg: Massive industrielle Produktion.",
+                    "1960": "Wirtschaftswunder: Starker Anstieg des Energieverbrauchs.",
+                    "1980": "Beginn der Diskussion über globale Erwärmung. Erste Warnungen von Wissenschaftlern.",
+                    "2000": "Kyoto-Protokoll tritt in Kraft. Temperatur überschreitet 0.4°C Anomalie.",
+                    "2010": "Wärmstes Jahrzehnt seit Aufzeichnungsbeginn.",
+                    "2020": "Einer der drei wärmsten Jahre. COVID-19 reduziert kurzzeitig Emissionen.",
+                    "2023": "Wärmstes Jahr seit Aufzeichnungsbeginn! Überschreitung der 1.5°C Grenze.",
+                    "2024": "Neuer Rekord erwartet. El Niño verstärkt die Erwärmung."
+                },
+                fakten: [
+                    "Die globale Durchschnittstemperatur ist seit 1850 um etwa 1.2°C gestiegen.",
+                    "2023 war das wärmste Jahr seit Beginn der Aufzeichnungen (über 174 Jahre).",
+                    "Die letzten 9 Jahre waren die 9 wärmsten jemals gemessenen.",
+                    "Europa erwärmt sich doppelt so schnell wie der globale Durchschnitt.",
+                    "Jedes Jahrzehnt seit 1980 war wärmer als das vorherige.",
+                    "Die Erwärmung der letzten 50 Jahre ist 10x schneller als nach der letzten Eiszeit."
+                ]
+            },
+            co2: {
+                name: "CO₂-Konzentration",
+                einheit: "ppm",
+                labels: ['1960', '1970', '1980', '1990', '2000', '2010', '2015', '2020', '2023', '2024'],
+                werte: [317, 326, 339, 354, 369, 390, 401, 414, 421, 426],
+                farbe: 'rgba(14, 165, 233, 0.8)',
+                farbeFill: 'rgba(14, 165, 233, 0.2)',
+                hintergrund: {
+                    "1960": "Beginn der systematischen CO₂-Messungen auf Mauna Loa, Hawaii.",
+                    "1970": "Erste Umweltbewegungen entstehen. Earth Day wird eingeführt.",
+                    "1980": "IPCC wird gegründet. CO₂ steigt jährlich um etwa 1.5 ppm.",
+                    "1990": "Erster IPCC-Bericht warnt vor Klimawandel.",
+                    "2000": "CO₂ steigt schneller: etwa 2 ppm pro Jahr.",
+                    "2010": "390 ppm erreicht. Diskussion über 'sichere' Grenzwerte.",
+                    "2015": "Pariser Klimaabkommen wird unterzeichnet. 400 ppm überschritten.",
+                    "2020": "Trotz COVID-19 steigt CO₂ weiter an.",
+                    "2023": "421 ppm - höchster Wert seit mindestens 4 Millionen Jahren!",
+                    "2024": "Neuer Rekordwert. Anstieg beschleunigt sich auf 2.5-3 ppm/Jahr."
+                },
+                fakten: [
+                    "Die aktuelle CO₂-Konzentration ist die höchste seit 4 Millionen Jahren.",
+                    "Vor der Industrialisierung lag der Wert bei etwa 280 ppm.",
+                    "Der jährliche Anstieg beträgt aktuell etwa 2.5 ppm.",
+                    "Etwa 50% des ausgestoßenen CO₂ wird von Ozeanen und Wäldern aufgenommen.",
+                    "CO₂ bleibt bis zu 1000 Jahre in der Atmosphäre.",
+                    "Jede Tonne CO₂ erwärmt das Klima - es gibt kein 'sicheres' Emissionsniveau."
+                ]
+            }
+        };
+
+        let tempChart, co2Chart;
+        let selectedChart = null;
+
+        // Grafiken initialisieren
+        function initCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index',
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#94a3b8',
+                        borderColor: '#0ea5e9',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            title: function(context) {
+                                return '📅 Jahr: ' + context[0].label;
+                            },
+                            label: function(context) {
+                                const datasetLabel = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                return `${datasetLabel}: ${value}`;
+                            },
+                            afterLabel: function(context) {
+                                return '\n💡 Klicke auf die Grafik für mehr Infos!';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#94a3b8' }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                }
+            };
+
+            // Temperatur-Chart
+            const tempCtx = document.getElementById('tempChart').getContext('2d');
+            tempChart = new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: klimaDaten.temperatur.labels,
+                    datasets: [{
+                        label: 'Temperaturanomalie (°C)',
+                        data: klimaDaten.temperatur.werte,
+                        borderColor: klimaDaten.temperatur.farbe,
+                        backgroundColor: klimaDaten.temperatur.farbeFill,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6,
+                        pointHoverRadius: 10,
+                        pointBackgroundColor: klimaDaten.temperatur.farbe,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: chartOptions
+            });
+
+            // CO2-Chart
+            const co2Ctx = document.getElementById('co2Chart').getContext('2d');
+            co2Chart = new Chart(co2Ctx, {
+                type: 'line',
+                data: {
+                    labels: klimaDaten.co2.labels,
+                    datasets: [{
+                        label: 'CO₂ (ppm)',
+                        data: klimaDaten.co2.werte,
+                        borderColor: klimaDaten.co2.farbe,
+                        backgroundColor: klimaDaten.co2.farbeFill,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6,
+                        pointHoverRadius: 10,
+                        pointBackgroundColor: klimaDaten.co2.farbe,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+
+        // Grafik auswählen
+        function selectChart(chartType) {
+            selectedChart = chartType;
+            const daten = klimaDaten[chartType];
+            
+            // Visuelle Hervorhebung
+            document.querySelectorAll('.chart-container').forEach(c => c.classList.remove('active'));
+            document.getElementById(chartType === 'temperatur' ? 'temp-chart-container' : 'co2-chart-container').classList.add('active');
+            
+            // Info aktualisieren
+            document.getElementById('selected-chart-info').innerHTML = `
+                <strong>Ausgewählt: ${daten.name}</strong><br>
+                <small style="color: var(--text-muted)">Aktuelle Werte: ${daten.labels[daten.labels.length-1]}: ${daten.werte[daten.werte.length-1]} ${daten.einheit}</small>
+            `;
+            
+            // Schnellfragen aktualisieren
+            const quickQuestions = chartType === 'temperatur' ? [
+                "Warum steigt die Temperatur?",
+                "Was bedeutet 1.2°C Erwärmung?",
+                "Was war 2023 besonders?",
+                "Wie schnell erwärmt sich Europa?",
+                "Was sind die Folgen?"
+            ] : [
+                "Warum steigt CO₂?",
+                "Was bedeutet 420 ppm?",
+                "Wie lange bleibt CO₂ in der Luft?",
+                "Was war vor der Industrie?",
+                "Was sind die Hauptquellen?"
+            ];
+            
+            document.getElementById('chart-quick-questions').innerHTML = quickQuestions.map(q => 
+                `<button class="chart-quick-btn" onclick="frageGrafik('${q}')">${q}</button>`
+            ).join('');
+            
+            // Willkommensnachricht
+            const chatContainer = document.getElementById('chart-chat-messages');
+            chatContainer.innerHTML = `
+                <div class="message message-bot">
+                    <div class="message-content">
+                        📊 Du hast <strong>${daten.name}</strong> ausgewählt!<br><br>
+                        Hier ein interessanter Fakt:<br>
+                        💡 ${daten.fakten[Math.floor(Math.random() * daten.fakten.length)]}
+                        <br><br>
+                        Stelle mir gerne weitere Fragen zu diesen Daten!
+                    </div>
+                </div>
+            `;
+        }
+
+        // Frage zur Grafik stellen
+        function frageGrafik(frage) {
+            document.getElementById('chart-question-input').value = frage;
+            sendeGrafikFrage();
+        }
+
+        // Grafik-Frage senden
+        async function sendeGrafikFrage() {
+            const input = document.getElementById('chart-question-input');
+            const frage = input.value.trim();
+            if (!frage) return;
+            
+            if (!selectedChart) {
+                alert('Bitte wähle zuerst eine Grafik aus!');
+                return;
+            }
+            
+            const chatContainer = document.getElementById('chart-chat-messages');
+            
+            // User-Nachricht
+            chatContainer.innerHTML += `
+                <div class="message message-user">
+                    <div class="message-content">${frage}</div>
+                </div>
+            `;
+            
+            input.value = '';
+            
+            // Antwort generieren
+            try {
+                const response = await fetch('/api/grafik-frage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        frage: frage,
+                        grafik: selectedChart
+                    })
+                });
+                
+                const data = await response.json();
+                
+                chatContainer.innerHTML += `
+                    <div class="message message-bot">
+                        <div class="message-content">${data.antwort.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                chatContainer.innerHTML += `
+                    <div class="message message-bot">
+                        <div class="message-content">❌ Fehler beim Abrufen der Antwort. Ist der Server aktiv?</div>
+                    </div>
+                `;
+            }
+            
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Enter-Taste für Grafik-Input
+        document.getElementById('chart-question-input')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendeGrafikFrage();
+        });
+
+        // ============================================
+        // SEITE LADEN
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            ladeVeroeffentlichungen();
+            initCharts();
+        });
+    </script>
+</body>
+</html>
+

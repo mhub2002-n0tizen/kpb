@@ -1,0 +1,9 @@
+# Copernicus Climate Dashboard - Abhängigkeiten
+# Installiere mit: pip install -r requirements.txt
+
+flask==3.0.0
+requests==2.31.0
+python-dotenv==1.0.0
+feedparser==6.0.10
+openai==1.56.0
+

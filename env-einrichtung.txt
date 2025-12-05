@@ -1,0 +1,52 @@
+# =============================================================================
+# OpenAI API-Key Einrichtung für das Copernicus Climate Dashboard
+# =============================================================================
+
+ANLEITUNG:
+
+1. Erstelle eine neue Datei namens ".env" im Projektordner (KPB/)
+
+2. Füge folgende Zeile in die .env Datei ein:
+   
+   OPENAI_API_KEY=dein-echter-api-key
+
+3. Ersetze "dein-echter-api-key" mit deinem OpenAI API-Key
+
+# =============================================================================
+# Wie bekomme ich einen OpenAI API-Key?
+# =============================================================================
+
+1. Gehe zu: https://platform.openai.com
+
+2. Erstelle einen Account oder melde dich an
+
+3. Klicke links im Menü auf "API Keys"
+
+4. Klicke auf "Create new secret key"
+
+5. Kopiere den Key (er wird nur einmal angezeigt!)
+
+6. Füge den Key in deine .env Datei ein
+
+# =============================================================================
+# Beispiel .env Datei:
+# =============================================================================
+
+OPENAI_API_KEY=sk-proj-abc123xyz789...
+
+# =============================================================================
+# WICHTIG - Sicherheitshinweise:
+# =============================================================================
+
+- Teile deinen API-Key NIEMALS öffentlich
+- Lade die .env Datei NICHT auf GitHub hoch
+- Jeder mit deinem Key kann auf deine Kosten API-Anfragen stellen
+
+# =============================================================================
+# Kosten:
+# =============================================================================
+
+- OpenAI berechnet pro Anfrage (Token-basiert)
+- GPT-5.1 kostet ca. 0.01-0.03 USD pro Anfrage
+- Du kannst ein Limit in deinem OpenAI-Dashboard setzen
+
